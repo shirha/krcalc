@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+  <meta name="mobile-web-app-capable" content="yes">
+<title>Keto Ratio Calculator</title>
+<link rel="stylesheet" type="text/css" href="skeleton-normalize-min.css">
+<link rel="manifest" href="manifest.json">
+<link rel="shortcut icon" type="image/png" href="favicon-512.png">
+<style type="text/css">
+.rt { text-align: right; }
+:focus { outline: none; }
+input[type=button]:focus { background-color: #e8f0fe; }
+input, select { margin-bottom: 3px; }
+input:disabled { border-color: white; }
+td { border-bottom-width: 0; padding: 0 10px 0 10px; }
+select { width: 152px; }
+</style></head><body><div class="container"><table>
+  <tr><td colspan="3"><center><h3>KR Calculator</h3></center>
+  <tr><td>gender  <td colspan="2">
+                      <input type="radio" name="gender" value="Male"> Male &nbsp;
+                      <input type="radio" name="gender" value="Female" checked="checked"> Female
+  <tr><td>age     <td><input size="6" id="age"    inputmode="numeric" pattern="[0-9]*" type="text" value="42">
+  <tr><td>height  <td><input size="6" id="height" inputmode="numeric" pattern="[0-9]*" type="text" value="66">
+  <tr><td>weight  <td><input size="6" id="weight" inputmode="numeric" pattern="[0-9]*" type="text" value="170">
+  <tr><td>bmi     <td><input size="6" id="bmi"    type="text" disabled>
+  <tr><td>activity<td colspan="2">
+  <select id="activity" name="activity" onchange="active(); calc();">
+    <option value="1.0">0.5 - (BMR)</option>
+    <option value="1.1" selected=""
+                       >0.6 - Sedentary</option>
+    <option value="1.2">0.7 - Light</option>
+    <option value="1.3">0.8 - Moderate</option>
+    <option value="1.4">0.9 - Heavy</option>
+    <option value="1.5">1.0 - Intense</option>
+  </select>
+  <tr><td>goal<td colspan="2">
+    <select id="goal" name="goal" onchange="active(); calc();">
+    <option value="0.8">Lose 1 lb / wk</option>
+    <option value="0.9">Lose ½ lb / wk</option>
+    <option value="1.0" selected=""
+                       >Maintain Weight</option>
+    <option value="1.1">Gain ½ lb / wk</option>
+    <option value="1.2">Gain 1 lb / wk</option>
+  </select>
+  <tr><td>kcal    <td><input size="6" id="kcal"    inputmode="numeric" pattern="[0-9]*" type="text">
+  <tr><td>carbs   <td><input size="6" id="carbs"   inputmode="numeric" pattern="[0-9]*" type="text" value="30"><td class="rt" id="carbs_pct">
+  <tr><td>protein <td><input size="6" id="protein" inputmode="numeric" pattern="[0-9]*" type="text"           ><td class="rt" id="prot_pct">
+  <tr><td>fat     <td><input size="6" id="fat"     type="text" disabled  ><td class="rt" id="fat_pct">
+  <tr><td>KR      <td><input size="6" id="kr"      type="text" disabled>
+  <tr><td><td colspan="2"><input onclick=calc() type="button" value="Calculate">
+<!--/table><img src="ketosis.jpg"-->
+<script>
+var gender, age, height, weight, e, act_cal, act_bmi, kcal, carbs, protein, fat, kr, goal_ratio;
+function calc() {
+  gender  = document.querySelector("input[name=gender]:checked").value,
+  e       = document.getElementById("age"), e.disabled = true,
+  age     = parseFloat(e.value),
+  e       = document.getElementById("height"), e.disabled = true,
+  height  = parseFloat(e.value), 
+  e       = document.getElementById("weight"), e.disabled = true,
+  weight  = parseFloat(e.value),
+  e       = document.getElementById("activity"),
+  act_cal = parseFloat(e.options[e.selectedIndex].value), 
+  act_bmi = parseFloat(e.options[e.selectedIndex].text),
+  e       = document.getElementById("goal");
+  goal_ratio = parseFloat(e.options[e.selectedIndex].value),
+  kcal    = parseFloat(document.getElementById("kcal").value)    || fcal(),
+  carbs   = parseFloat(document.getElementById("carbs").value)   || 30, 
+  protein = parseFloat(document.getElementById("protein").value) || fprot(),
+  fat     = (kcal - (carbs + protein) * 4) / 9,
+  kr      = (0.46 * protein + 0.90 * fat) / (1.0 * carbs + 0.58 * protein + 0.1 * fat); 
+// http://www.flexibleketogenic.com/2017/03/how-does-woodyatt-formula-work.html - Woodyatt formula (1921) 
+  document.getElementById("bmi").value           = lookup[0][fidx()];
+  document.getElementById("kcal").value          = kcal.toFixed(0);
+  document.getElementById("carbs").value         = carbs.toFixed(0); 
+  document.getElementById("protein").value       = protein.toFixed(0); 
+  document.getElementById("fat").value           = fat.toFixed(0);
+  document.getElementById("carbs_pct").innerHTML = (carbs   * 4 / kcal * 100).toFixed(1) + "%";
+  document.getElementById("prot_pct").innerHTML  = (protein * 4 / kcal * 100).toFixed(1) + "%";
+  document.getElementById("fat_pct").innerHTML   = (fat     * 9 / kcal * 100).toFixed(1) + "%";
+  document.getElementById("kr").value            = kr.toFixed(2);
+  console.log(fidx(),gender,act_cal,act_bmi,goal_ratio);
+}
+var radio = document.getElementsByName("gender");
+for (r in radio){
+  radio[r].onclick = function(){
+    document.getElementById("age").value    = this.value === "Male" ?  70 :  42;
+    document.getElementById("height").value = this.value === "Male" ?  68 :  66;
+    document.getElementById("weight").value = this.value === "Male" ? 150 : 170;
+  }
+}
+function active(){   
+   gender = document.querySelector("input[name=gender]:checked").value,
+   height = parseFloat(document.getElementById("height").value), 
+  weight  = parseFloat(document.getElementById("weight").value),
+  e       = document.getElementById("activity");
+  act_cal = parseFloat(e.options[e.selectedIndex].value); 
+  act_bmi = parseFloat(e.options[e.selectedIndex].text);
+  e       = document.getElementById("goal");
+  goal_ratio = parseFloat(e.options[e.selectedIndex].value); 
+  document.getElementById("kcal").value = fcal().toFixed(0);
+  document.getElementById("protein").value = fprot().toFixed(0);
+  console.log(fidx(),gender,act_cal,act_bmi,goal_ratio);
+}
+// https://www.calculator.net/calorie-calculator.html - Mifflin-St Jeor Equation
+function fcal(){ // 1 lb = .45 kg; 1 in = 2.54 cm
+  return (10 * 0.45 * weight + 6.25 * 2.54 * height - 5 * age + (gender === 'Male' ? +5 : -161)) * act_cal * goal_ratio;
+}
+function fidx(){
+  return lookup[height - 57].findIndex(function(e) {return e >= this}, weight);
+}
+function fprot(){
+  return weight * (1 - parseFloat(lookup[0][fidx()]) / 100) * act_bmi;
+}
+document.addEventListener("keydown", keyDown, false);
+function keyDown(e) { 
+  if (e.keyCode === 13) calc(); 
+}
+// https://www.nhlbi.nih.gov/health/educational/lose_wt/BMI/bmicalc.htm
+var lookup = 
+`BMI 19 20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38  39  40  41  42  43  44  45  46  47  48  49  50  51  52  53  54
+58  91  96  100 105 110 115 119 124 129 134 138 143 148 153 158 162 167 172 177 181 186 191 196 201 205 210 215 220 224 229 234 239 244 248 253 258
+59  94  99  104 109 114 119 124 128 133 138 143 148 153 158 163 168 173 178 183 188 193 198 203 208 212 217 222 227 232 237 242 247 252 257 262 267
+60  97  102 107 112 118 123 128 133 138 143 148 153 158 163 168 174 179 184 189 194 199 204 209 215 220 225 230 235 240 245 250 255 261 266 271 276
+61  100 106 111 116 122 127 132 137 143 148 153 158 164 169 174 180 185 190 195 201 206 211 217 222 227 232 238 243 248 254 259 264 269 275 280 285
+62  104 109 115 120 126 131 136 142 147 153 158 164 169 175 180 186 191 196 202 207 213 218 224 229 235 240 246 251 256 262 267 273 278 284 289 295
+63  107 113 118 124 130 135 141 146 152 158 163 169 175 180 186 191 197 203 208 214 220 225 231 237 242 248 254 259 265 270 278 282 287 293 299 304
+64  110 116 122 128 134 140 145 151 157 163 169 174 180 186 192 197 204 209 215 221 227 232 238 244 250 256 262 267 273 279 285 291 296 302 308 314
+65  114 120 126 132 138 144 150 156 162 168 174 180 186 192 198 204 210 216 222 228 234 240 246 252 258 264 270 276 282 288 294 300 306 312 318 324
+66  118 124 130 136 142 148 155 161 167 173 179 186 192 198 204 210 216 223 229 235 241 247 253 260 266 272 278 284 291 297 303 309 315 322 328 334
+67  121 127 134 140 146 153 159 166 172 178 185 191 198 204 211 217 223 230 236 242 249 255 261 268 274 280 287 293 299 306 312 319 325 331 338 344
+68  125 131 138 144 151 158 164 171 177 184 190 197 203 210 216 223 230 236 243 249 256 262 269 276 282 289 295 302 308 315 322 328 335 341 348 354
+69  128 135 142 149 155 162 169 176 182 189 196 203 209 216 223 230 236 243 250 257 263 270 277 284 291 297 304 311 318 324 331 338 345 351 358 365
+70  132 139 146 153 160 167 174 181 188 195 202 209 216 222 229 236 243 250 257 264 271 278 285 292 299 306 313 320 327 334 341 348 355 362 369 376
+71  136 143 150 157 165 172 179 186 193 200 208 215 222 229 236 243 250 257 265 272 279 286 293 301 308 315 322 329 338 343 351 358 365 372 379 386
+72  140 147 154 162 169 177 184 191 199 206 213 221 228 235 242 250 258 265 272 279 287 294 302 309 316 324 331 338 346 353 361 368 375 383 390 397
+73  144 151 159 166 174 182 189 197 204 212 219 227 235 242 250 257 265 272 280 288 295 302 310 318 325 333 340 348 355 363 371 378 386 393 401 408
+74  148 155 163 171 179 186 194 202 210 218 225 233 241 249 256 264 272 280 287 295 303 311 319 326 334 342 350 358 365 373 381 389 396 404 412 420
+75  152 160 168 176 184 192 200 208 216 224 232 240 248 256 264 272 279 287 295 303 311 319 327 335 343 351 359 367 375 383 391 399 407 415 423 431
+76  156 164 172 180 189 197 205 213 221 230 238 246 254 263 271 279 287 295 304 312 320 328 336 344 353 361 369 377 385 394 402 410 418 426 435 443`
+.split(/\n/).map(x => x.split(/\s+/));
+</script></body></html>
